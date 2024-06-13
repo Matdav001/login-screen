@@ -4,25 +4,25 @@
 // 09 Jun 2024 Mateus Vasco (mateusvascosc@gmail.com)
 //
 
-import QtQuick
-import Qt5Compat.GraphicalEffects
+import QtQuick 6.7
+import QtQuick.Controls 6.7
 
 Item {
-	id : ls_button
+	id : lsButton
 
 	property bool enabled : true
 
 	property int buttonSize : 56
 
-	property alias buttonWidth : ls_button_bg.width	
-	property alias buttonHeight : ls_button_bg.height
+	property alias buttonWidth : lsButtonBg.width	
+	property alias buttonHeight : lsButtonBg.height
 
-	property alias iconWidth : ls_button_img.width	
-	property alias iconHeight : ls_button_img.height
+	property alias iconWidth : lsButtonIcon.width	
+	property alias iconHeight : lsButtonIcon.height
 
-	property alias icon : ls_button_img.source
-	property alias label : ls_button_label.text
-	property alias font : ls_button_label.font
+	property alias icon : lsButtonIcon.source
+	property alias label : lsButtonLabel.text
+	property alias font : lsButtonLabel.font
 
 	property color bgColor : "#1E1E1E"
 	property color iconColor : "#D2D2D2"
@@ -43,58 +43,52 @@ Item {
 	signal released()
 	signal clicked()
 
+	//
+	// Button box
+	//
+	Rectangle {
+		id : lsButtonBg
+		width : buttonSize
+		height : buttonSize
+		radius : 0
+		color : bgColor
+
 		//
-		// Button box
+		// Button Border
 		//
 		Rectangle {
-			id : ls_button_bg
-			width : buttonSize
-			height : buttonSize
-			radius : 0
+			id : lsButtonBorder
+			width : 5
+			height : parent.height
 			color : bgColor
+		}
 
-			//
-			// Button Border
-			//
-			Rectangle {
-				id : ls_button_border
-				width : 5
-				height : parent.height
-				color : bgColor
-			}
-
-			//
-			// Button Icon
-			//
-			Image {
+		//
+		// Button Icon
+		//
+		Item{
+			anchors.centerIn : parent
+			IconImage {
+				id : lsButtonIcon
+				color : labelColor
 				mipmap : true
-				id : ls_button_img
 				anchors.centerIn : parent
 				width : buttonSize*0.75
 				height : buttonSize*0.75
 				sourceSize : Qt.size((buttonSize*0.75),(buttonSize*0.75))
 				source : ""
 			}
-
-			//
-			// Button Icon Color
-			//
-			ColorOverlay {
-				id : ls_button_icon
-				anchors.fill : ls_button_img
-				source : ls_button_img
-				color : iconColor
-			}
+		}
 
 		//
 		// Button Text
 		//
 		Text {
-			anchors.centerIn : ls_button_bg
-			id : ls_button_label
+			anchors.centerIn : lsButtonBg
+			id : lsButtonLabel
 			text : ""
 			color : labelColor
-			font.pixelSize : 24
+			font.pixelSize : 40
 		}
 	}
 
@@ -104,45 +98,33 @@ Item {
 	states : [
 		State {
 			name : "disabled"
-			when : (ls_button.enabled === false)
+			when : (lsButton.enabled === false)
 			PropertyChanges {
-				target : ls_button_img
-				source : ""
+				target : lsButton
+				opacity : 0
 			}
 			PropertyChanges {
-				target : ls_button_bg
-				color : disableColor
-			}
-			PropertyChanges {
-				target : ls_button_icon
-				color : disableColor
-			}
-			PropertyChanges {
-				target : ls_button_label
-				color : disableColor
-			}
-			PropertyChanges {
-				target : ls_button_border
-				color : disableColor
+				target : mouseInput
+				enabled : false
 			}
 		},
 
 		State {
 			name : "hover"
 			PropertyChanges {
-				target : ls_button_bg
+				target : lsButtonBg
 				color : hoverBgColor
 			}
 			PropertyChanges {
-				target : ls_button_icon
+				target : lsButtonIcon
 				color : hoverIconColor
 			}
 			PropertyChanges {
-				target : ls_button_label
+				target : lsButtonLabel
 				color : hoverLabelColor
 			}	
 			PropertyChanges {
-				target : ls_button_border
+				target : lsButtonBorder
 				color : borderColor
 			}
 		},
@@ -150,19 +132,19 @@ Item {
 		State {
 			name : "pressed"
 			PropertyChanges {
-				target : ls_button_bg
+				target : lsButtonBg
 				color : pressBgColor
 			}
 			PropertyChanges {
-				target : ls_button_icon
+				target : lsButtonIcon
 				color : pressIconColor
 			}
 			PropertyChanges {
-				target : ls_button_label
+				target : lsButtonLabel
 				color : pressLabelColor
 			}
 			PropertyChanges {
-				target : ls_button_border
+				target : lsButtonBorder
 				color : borderColor
 			}
 		}
@@ -175,25 +157,37 @@ Item {
 		Transition {
 			from : ""
 			to : "hover"
-			ColorAnimation {duration : 50}
+			ColorAnimation {duration : 200}
 		},
 
 		Transition {
 			from : ""
 			to : "pressed"
-			ColorAnimation {duration : 25}
+			ColorAnimation {duration : 100}
 		},
 
 		Transition {
 			from : "disabled"
 			to : ""
-			ColorAnimation {duration : 100}
+			NumberAnimation {
+				target : lsButton
+				property : "opacity"
+				from : 0
+				to : 1
+				duration : 150
+			}
 		},
 
 		Transition {
 			from : ""
 			to : "disabled"
-			ColorAnimation {duration : 100}
+			NumberAnimation {
+				target : lsButton
+				property : "opacity"
+				from : 1
+				to : 0
+				duration : 150
+			}
 		}
 	]
 
@@ -204,17 +198,17 @@ Item {
 	(event)=> { if ((event.key == Qt.Key_Enter) ||
 	(event.key == Qt.Key_Return) ||
 	(event.key == Qt.Key_Space)) {
-		ls_button.clicked()
-		ls_button.state = "pressed"
+		lsButton.clicked()
+		lsButton.state = "pressed"
 	}}
 	Keys.onReleased : 
 	(event)=> { if ((event.key == Qt.Key_Enter) ||
 	(event.key == Qt.Key_Return) ||
 	(event.key == Qt.Key_Space)) {
-		ls_button.state = activeFocus ? "hover" : "" 
+		lsButton.state = activeFocus ? "hover" : "" 
 	}}
 	onActiveFocusChanged : {
-		ls_button.state = activeFocus ? "hover" : "" 
+		lsButton.state = activeFocus ? "hover" : "" 
 	}
 
 
@@ -222,17 +216,20 @@ Item {
 	// Area to react to mouse actions
 	//
 	MouseArea {
-		anchors.fill : ls_button
+		id : mouseInput
+		enabled : true
+		anchors.fill : lsButton
 		hoverEnabled : true
-		cursorShape : ls_button.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+		cursorShape : Qt.PointingHandCursor
 		acceptedButtons : Qt.LeftButton
 
-		onEntered : {if(ls_button.enabled) ls_button.state = "hover"}
-		onExited : {if(ls_button.enabled) ls_button.state = ""}
-		onPressed : {if(ls_button.enabled) ls_button.state = "pressed"}
-		onClicked : {if(ls_button.enabled) ls_button.clicked()}
-		onReleased : { 
-		if (containsMouse && ls_button.enabled) ls_button.state = "hover" 
-		else if (ls_button.enabled) ls_button.state = ""}
+		onEntered : {lsButton.state = "hover"}
+		onExited : {lsButton.state = parent.activeFocus ? "hover" : ""}
+		onPressed : {lsButton.state = "pressed"}
+		onClicked : {lsButton.clicked()}
+		onReleased : {lsButton.state = 
+		(containsMouse || parent.activeFocus) ?
+		"hover" : 
+		""}
 	}
 }

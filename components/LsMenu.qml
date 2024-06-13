@@ -4,8 +4,8 @@
 // 09 Jun 2024 Mateus Vasco (mateusvascosc@gmail.com)
 //
 
-import QtQuick
-import QtQuick.Controls
+import QtQuick 6.7
+import QtQuick.Controls 6.7
 
 ComboBox {
 
@@ -38,6 +38,8 @@ ComboBox {
 	height : menuSize
 	width : menuSize*2 + menuSize/4
 	z : 100
+	visible : true
+	opacity : 1
 
 	//
 	// Item that populates each model inside a box for presentation
@@ -78,9 +80,6 @@ ComboBox {
 			verticalAlignment : Text.AlignVCenter
 		}
 		highlighted : ls_menu.highlightedIndex === index
-		HoverHandler {
-			cursorShape : Qt.PointingHandCursor
-		}
 	}
 
 	//
@@ -151,22 +150,18 @@ ComboBox {
 			name : "disabled"
 			when : (ls_menu.enabled === false)
 			PropertyChanges {
-				target : ls_menu_bg
-				color : disableColor
+				target : ls_menu
+				visible : false
 			}
 			PropertyChanges {
-				target : ls_menu_label
-				color : disableColor
-			}
-			PropertyChanges {
-				target : ls_menu_border
-				color : disableColor
+				target : mouseInput
+				enabled : false
+				
 			}
 		},
 
 		State {	
 			name : "hover"
-			when : ls_menu.hovered
 			PropertyChanges {
 				target : ls_menu_bg
 				color : hoverBgColor
@@ -205,25 +200,37 @@ ComboBox {
 		Transition {
 			from : ""
 			to : "hover"
-			ColorAnimation {duration : 50}
+			ColorAnimation {duration : 100}
 		},
 
 		Transition {
 			from : ""
 			to : "pressed"
-			ColorAnimation {duration : 25}
+			ColorAnimation {duration : 100}
 		},
 
 		Transition {
 			from : "disabled"
-			to : "enabled"
-			ColorAnimation {duration : 100}
+			to : ""
+			NumberAnimation {
+				target : ls_menu
+				property : "opacity"
+				from : 0
+				to : 1
+				duration : 150
+			}
 		},
 
 		Transition {
-			from : "enabled"
+			from : ""
 			to : "disabled"
-			ColorAnimation {duration : 100}
+			NumberAnimation {
+				target : ls_menu
+				property : "opacity"
+				from : 1
+				to : 0
+				duration : 150
+			}
 		}
 	]
 
@@ -249,13 +256,16 @@ ComboBox {
 	// Area to react to mouse actions
 	//
 	MouseArea {
+		id : mouseInput
+		enabled : true
 		z : 99
 		anchors.fill : ls_menu_bg
-
 		hoverEnabled : true
 		cursorShape : Qt.PointingHandCursor
 		acceptedButtons : Qt.LeftButton
 
+		onEntered : {ls_menu.state = "hover"}
+		onExited : {ls_menu.state = parent.activeFocus ? "hover" : ""}
 		onPressed : {ls_menu.state = "pressed"}
 		onClicked : {ls_menu.popup.visible ^= 1}
 		onReleased : {if (containsMouse) 

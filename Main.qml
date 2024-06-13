@@ -2,10 +2,9 @@
 // SDDM Theme
 //
 
-import QtQuick
-import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
-import SddmComponents
+import QtQuick 6.7
+import QtQuick.Controls 6.7
+import SddmComponents 2.0
 
 import "./components"
 
@@ -20,6 +19,7 @@ Rectangle {
 	property color gray2 : "#282828"
 	property color gray3 : "#323232"
 	property color textColor : "#D2D2D2"
+	property color wrongColor : "#D25050"
 
 	//
 	// Menus states
@@ -34,6 +34,8 @@ Rectangle {
 	readonly property int buttonSize : 56
 	readonly property int menuSize : 56
 
+	property bool showLocks: false
+
 	TextConstants { id : textConstants }
 	
 	//
@@ -41,29 +43,12 @@ Rectangle {
 	//
 	Connections {
 		target : sddm
-
-		onLoginSucceeded : {
-			lgWorking.visible = false;
-			lgWorkingAnim.stop()
-
-			lgSucess.visible = true			
-			lgFailed.visible = false
-		}
-		onLoginFailed : {
+	
+		function onLoginFailed() {
 			lgWorking.visible = false;
 			lgWorkingAnim.stop()
 
 			lgFailed.visible = true			
-			lgSucess.visible = false
-		}
-		onInformationMessage : {
-			prompter.visible = true
-			prompt_txt.text = message
-
-			lgWorking.visible = false;
-			lgWorkingAnim.stop()
-
-			lgFailed.visible = true
 		}
 	}
 
@@ -72,9 +57,8 @@ Rectangle {
 	//
 	signal tryLogin()
 	onTryLogin : {
-		lgWorking.visible = true;
-		lgSucess.visible = false
 		lgFailed.visible = false
+		lgWorking.visible = true;
 		lgWorkingAnim.start()
 		sddm.login(userMenu.displayText, passwordIn.text, winManMenu.currentIndex);
 	}
@@ -110,6 +94,8 @@ Rectangle {
 		id : configButton
 		onClicked : 
 		if (menu1) {
+			if (passwordIn.focus == false && loginButton.focus == false)
+			configButton.focus = true
 			menu1 = false
 			menu2 = false
 			menu3 = false
@@ -120,7 +106,8 @@ Rectangle {
 		y : buttonSize/4
 		width : buttonSize
 		height : buttonSize
-		icon : "../images/gear-icon.svg"
+		label: "" 
+	//	icon : "../images/gear-icon.svg"
 		KeyNavigation.backtab : loginButton
 		KeyNavigation.tab : menu1 ? winManButton : passwordIn
 	}
@@ -133,6 +120,8 @@ Rectangle {
 		enabled : menu1
 		onClicked : 
 		if (menu2) {
+			if (winManMenu.focus == true)
+			winManButton.focus = true
 			menu2 = false
 		} else {
 			menu3 = false
@@ -142,7 +131,7 @@ Rectangle {
 		y : (buttonSize/4)*2 + buttonSize
 		width : buttonSize
 		height : buttonSize
-		icon : "../images/win-man-icon.svg"
+		label : "󰹑"
 		KeyNavigation.backtab : configButton
 		KeyNavigation.tab : menu2 ? winManMenu : userButton
 	}
@@ -171,6 +160,8 @@ Rectangle {
 		enabled : menu1
 		onClicked : 
 		if (menu3) {
+			if (userMenu.focus==true)
+			userButton.focus = true
 			menu3 = false
 		} else {
 			menu2 = false
@@ -180,7 +171,8 @@ Rectangle {
 		y : (buttonSize/4)*3 + buttonSize*2
 		width : buttonSize
 		height : buttonSize
-		icon : "../images/user.svg"
+		label: ""
+		font.pixelSize: 36
 		KeyNavigation.backtab : menu2 ? winManMenu : winManButton
 		KeyNavigation.tab : menu3 ? userMenu : rebootButton
 	}
@@ -210,11 +202,9 @@ Rectangle {
 		onClicked : sddm.reboot()
 		x : parent.width - buttonSize - buttonSize/4
 		y : (buttonSize/4)*4 + buttonSize*3
-		iconWidth : buttonSize*0.64
-		iconHeight : buttonSize*0.64
 		width : buttonSize
 		height : buttonSize
-		icon : "../images/reboot.svg"
+		label : ""
 		KeyNavigation.backtab : menu3 ? userMenu : userButton
 		KeyNavigation.tab : shutdownButton
 	}
@@ -228,10 +218,9 @@ Rectangle {
 		onClicked : sddm.powerOff()
 		x : parent.width - buttonSize - buttonSize/4
 		y : (buttonSize/4)*5 + buttonSize*4
-		iconWidth : buttonSize*0.64
 		width : buttonSize
 		height : buttonSize
-		icon : "../images/shutdown.svg"	
+		label : ""
 		KeyNavigation.backtab : rebootButton
 		KeyNavigation.tab : passwordIn
 	}
@@ -293,13 +282,8 @@ Rectangle {
 			hoverColor : activeFocus ? gray3 : gray2
 			textColor : "#D2D2D2"
 			font.pixelSize : 24
-			imageFadeIn : 50
-			imageFadeOut : 50
-			image : Qt.resolvedUrl("./images/caps.png")
-			tooltipEnabled : true
-			tooltipText : "CapsLock"
-			tooltipFG : textColor
-			tooltipBG : background
+			image : ""
+			tooltipEnabled : false
 			KeyNavigation.tab : loginButton
 			KeyNavigation.backtab : menu1 ? shutdownButton : configButton 
 			Keys.onReleased : (event)=> { if (
@@ -332,11 +316,11 @@ Rectangle {
 		//
 		LsButton {
 			id : loginButton
-			x : menuSize/4 
+			x : showLocks ? menuSize*1.5 : menuSize/4 
 			y : parent.height - menuSize*1.25
-			width : (parent.width - (menuSize/2))
+			width : showLocks ? menuSize*5 : menuSize*7.5
 			height : menuSize
-			buttonWidth : parent.width - menuSize/2
+			buttonWidth : showLocks ? menuSize*5 : menuSize*7.5
 			label : textConstants.login
 			font.pixelSize : 32
 			bgColor : gray2
@@ -349,110 +333,109 @@ Rectangle {
 				(event.key === Qt.Key_Enter)) {
 					logScr.tryLogin()
 					event.accepted = true;
-				}}
-			}
-		}
-
-		//
-		// Loading animation
-		//
-		Rectangle {
-			id : lgWorking
-			x : (parent.width - menuSize)/2
-			y : (parent.height - (menuSize*2))
-			width : menuSize
-			height : menuSize
-			visible : false
-			color : gray1
-			Image {
-				mipmap : true
-				id : lgWorkingIndicator
-				anchors.centerIn : parent
-				source : "./images/loading-icon.svg"
-				width : menuSize*0.75
-				height : menuSize*0.75
-				sourceSize : Qt.size((menuSize*0.75),(menuSize*0.75))
-				rotation : 0
-			}
-			SequentialAnimation {
-				id : lgWorkingAnim
-				running : false
-				loops : Animation.Infinite
-				NumberAnimation {
-					target : lgWorkingIndicator
-					property : "rotation"
-					from : 0
-					to : 360
-					duration : 1000
 				}
 			}
 		}
 
 		//
-		// Login Sucess icon
+		// Shows if CapsLock is on
 		//
 		Rectangle {
-			id : lgSucess
-			x : (parent.width - menuSize)/2
-			y : (parent.height - (menuSize*2))
+			visible: showLocks
+			x : menuSize/4
+			y : parent.height - menuSize*1.25			
 			width : menuSize
 			height : menuSize
-			visible : false
-			color : gray3
-			Image {
-				mipmap : true
-				anchors.centerIn : parent
-				source : "./images/check-icon.svg"
-				width : menuSize*0.75
-				height : menuSize*0.75
-				sourceSize : Qt.size((menuSize*0.75),(menuSize*0.75))
-			}
-		}
-
-		//
-		// Login Failed icon
-		//
-		Rectangle {
-			id : lgFailed
-			x : (parent.width - menuSize)/2
-			y : (parent.height - (menuSize*2))
-			width : menuSize
-			height : menuSize
-			visible : false
-			color : gray1
-			Image {
-				mipmap : true
-				anchors.centerIn : parent
-				source : "./images/wrong-icon.svg"
-				width : menuSize*0.75
-				height : menuSize*0.75
-				sourceSize : Qt.size((menuSize*0.75),(menuSize*0.75))
-			}
-		}
-
-		//
-		// Display Error Messages text
-		//
-		Rectangle{
-			id : prompter
-			visible : false
-			x : 0 
-			y : menuSize/4
-			width : parent.width
-			height : menuSize
-			color : gray2
-			Text {
-				anchors.centerIn : parent
-				text : textConstants.prompt
+			color: gray2
+			LsFadText{
+				state : keyboard.capsLock ? "active" : ""
 				color : textColor
-				font.pixelSize : 18
+				label : "󰪛"
+				font.pixelSize: menuSize*0.9
 			}
 		}
 
 		//
-		// Focus password box on init
+		// Shows if NumLock is on
 		//
-		Component.onCompleted : {
-			passwordIn.focus = true
+		Rectangle {
+			visible: showLocks
+			x : menuSize*6.75 
+			y : parent.height - menuSize*1.25			
+			width : menuSize
+			height : menuSize
+			color: gray2
+			LsFadText{
+				state : keyboard.numLock ? "active" : ""
+				color : textColor
+				label : "󰎣"
+				font.pixelSize: menuSize*0.9
+			}
 		}
 	}
+
+	//
+	// Loading animation
+	//
+	Rectangle {
+		id : lgWorking
+		x : (parent.width - menuSize)/2
+		y : (parent.height - (menuSize*2)) 
+		width : menuSize
+		height : menuSize
+		visible : false
+		color : gray1
+		Text {
+			id : lgWorkingIndicator
+			anchors.centerIn : parent
+			text : "󰸴"
+			font.pixelSize : 48
+			color : textColor
+		}
+		SequentialAnimation {
+			id : lgWorkingAnim
+			running : false
+			loops : Animation.Infinite
+			RotationAnimation {
+				target : lgWorkingIndicator
+				from : 0
+				to : 360
+				duration : 1000
+			}
+		}
+	}
+
+	//
+	// Login Failed icon
+	//
+	Rectangle {
+		id : lgFailed
+		x : (parent.width - menuSize)/2 - menuSize/4
+		y : (parent.height - (menuSize*2) - menuSize/4)
+		width : menuSize*1.5
+		height : menuSize*1.5
+		visible : false
+		color : gray1
+		Rectangle {
+			x : menuSize/4
+			y : menuSize/4
+			width: menuSize
+			height: menuSize
+			color : gray2
+			Text {
+				id : wrongText
+				anchors.centerIn : parent
+				text : ""
+				color : wrongColor
+				font.pixelSize : 40
+			}
+		}
+	}
+
+	//
+	// Focus password box on init
+	//
+	Component.onCompleted : {
+		passwordIn.focus = true
+	}
+}
